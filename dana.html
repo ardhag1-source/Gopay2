@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>NUSA Pay - Transfer & QR Payment</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0eaf4 0%, #cfdef5 100%);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Phone mockup */
+        .phone-mock {
+            max-width: 420px;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 44px;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.2), 0 0 0 10px #e8ecf2, 0 0 0 12px #b0bed0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .app-container {
+            background: #f8fafd;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        /* Status bar */
+        .status-bar {
+            padding: 14px 20px 8px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f8;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+
+        .main-header {
+            padding: 12px 20px 8px 20px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            background: #0057e7;
+            width: 36px;
+            height: 36px;
+            border-radius: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            background: linear-gradient(135deg, #0057e7, #00a86b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header-icons {
+            display: flex;
+            gap: 18px;
+            color: #5a6e8a;
+            font-size: 20px;
+        }
+
+        /* Balance card */
+        .balance-card {
+            background: linear-gradient(125deg, #0b2b5c, #0f3b7a);
+            margin: 16px 20px;
+            border-radius: 32px;
+            padding: 20px 24px;
+            color: white;
+            box-shadow: 0 18px 28px -12px rgba(0,45,85,0.3);
+        }
+
+        .balance-label {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .balance-amount {
+            font-size: 36px;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            margin-top: 8px;
+        }
+
+        .balance-amount span {
+            font-size: 18px;
+        }
+
+        .balance-actions {
+            display: flex;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .action-btn {
+            background: rgba(255,255,255,0.15);
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .action-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.97);
+        }
+
+        /* Quick menu */
+        .quick-menu {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            padding: 8px 20px;
+            background: white;
+            margin: 8px 0 4px;
+            gap: 8px;
+        }
+
+        .menu-item {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 500;
+            color: #2c3e66;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .menu-item i {
+            font-size: 24px;
+            background: #eef3fc;
+            padding: 12px;
+            border-radius: 30px;
+            display: block;
+            margin-bottom: 6px;
+            color: #0057e7;
+            transition: 0.2s;
+        }
+
+        .menu-item:active i {
+            background: #d9e6ff;
+            transform: scale(0.94);
+        }
+
+        /* Tab navigation */
+        .tab-navigation {
+            display: flex;
+            background: white;
+            margin: 12px 20px;
+            border-radius: 60px;
+            padding: 4px;
+            gap: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(95deg, #0057e7, #0077ff);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,87,231,0.3);
+        }
+
+        .tab-btn:not(.active) {
+            color: #5a6e8a;
+        }
+
+        /* Content panels */
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-panel.active-panel {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Transfer form */
+        .transfer-form, .qr-panel, .receipt-panel {
+            background: white;
+            margin: 0 20px 20px 20px;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5b73;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f1f5f9;
+            border-radius: 24px;
+            padding: 4px 16px;
+            border: 1px solid #e2edf7;
+            transition: all 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #0057e7;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0,87,231,0.1);
+        }
+
+        .input-wrapper i {
+            color: #8f9bb3;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+
+        .input-wrapper input, .input-wrapper textarea {
+            border: none;
+            background: transparent;
+            padding: 14px 0;
+            font-size: 15px;
+            width: 100%;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            resize: none;
+        }
+
+        .transfer-btn {
+            background: linear-gradient(95deg, #0057e7, #0077ff);
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 44px;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .transfer-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* QR Section */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 20px;
+            border-radius: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .qr-amount {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0057e7;
+            margin: 10px 0;
+        }
+
+        .qr-merchant {
+            font-size: 14px;
+            color: #6c7a91;
+            margin-bottom: 20px;
+        }
+
+        .qr-actions {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .qr-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #0057e7;
+            color: white;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #0057e7;
+            color: #0057e7;
+        }
+
+        /* Receipt / Bukti Pembayaran */
+        .receipt-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .receipt-header {
+            background: linear-gradient(135deg, #0057e7, #00a86b);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .receipt-header i {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .receipt-status {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .receipt-details {
+            padding: 24px;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .receipt-label {
+            color: #6c7a91;
+            font-size: 14px;
+        }
+
+        .receipt-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .receipt-value.large {
+            font-size: 20px;
+            color: #0057e7;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            width: 100%;
+            padding: 14px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* History list */
+        .history-list {
+            margin: 0 20px 20px 20px;
+            background: white;
+            border-radius: 24px;
+            padding: 8px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            border-bottom: 1px solid #eef2f8;
+            cursor: pointer;
+        }
+
+        .history-item:active {
+            background: #f8fafd;
+        }
+
+        .history-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-icon {
+            width: 48px;
+            height: 48px;
+            background: #eef3fc;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0057e7;
+            font-size: 20px;
+        }
+
+        .history-detail h4 {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .history-detail p {
+            font-size: 12px;
+            color: #8f9bb3;
+        }
+
+        .history-amount {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .history-amount.negative {
+            color: #e53e3e;
+        }
+
+        /* Toast */
+        .modal-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: #1f2937e6;
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 14px 26px;
+            border-radius: 60px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+
+        .modal-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        footer {
+            text-align: center;
+            font-size: 11px;
+            color: #8e9bb0;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-mock">
+    <div class="app-container">
+        <div class="status-bar">
+            <span>9:41</span>
+            <span><i class="fas fa-signal"></i> <i class="fas fa-battery-full"></i></span>
+        </div>
+        <div class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fas fa-dove"></i></div>
+                <div class="logo-text">NUSA Pay</div>
+            </div>
+            <div class="header-icons">
+                <i class="fas fa-bell"></i>
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="balance-card">
+            <div class="balance-label">Total Saldo</div>
+            <div class="balance-amount">Rp <span id="saldoDisplay">500.000</span></div>
+            <div class="balance-actions">
+                <div class="action-btn" id="topupBtn"><i class="fas fa-plus-circle"></i> Top Up</div>
+                <div class="action-btn" id="historyBtn"><i class="fas fa-clock"></i> Riwayat</div>
+            </div>
+        </div>
+
+        <!-- Quick Menu -->
+        <div class="quick-menu">
+            <div class="menu-item" data-tab="transfer"><i class="fas fa-paper-plane"></i><span>Transfer</span></div>
+            <div class="menu-item" data-tab="qr"><i class="fas fa-qrcode"></i><span>QR Scan</span></div>
+            <div class="menu-item" data-tab="myqr"><i class="fas fa-qrcode"></i><span>QR Saya</span></div>
+            <div class="menu-item" data-tab="history"><i class="fas fa-history"></i><span>Riwayat</span></div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="transfer-tab">Transfer</button>
+            <button class="tab-btn" data-tab="qr-tab">Bayar QR</button>
+            <button class="tab-btn" data-tab="receipt-tab">Bukti</button>
+        </div>
+
+        <!-- Panel Transfer -->
+        <div class="tab-panel active-panel" id="transfer-tab">
+            <div class="transfer-form">
+                <div class="input-group">
+                    <div class="input-label"><i class="fas fa-user"></i> Penerima</div>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user-circle"></i>
+                        <input type="text" id="namaPenerima" placeholder="Nama atau nomor rekening" value="Budi Santoso">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-label"><i class="fas fa-credit-card"></i> Nominal (Rp)</div>
+                    <div class="input-wrapper">
+                        <i class="fas fa-rupiah-sign"></i>
+                        <input type="text" id="nominalTransfer" placeholder="0" value="100000">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-label"><i class="fas fa-pen"></i> Catatan</div>
+                    <div class="input-wrapper">
+                        <i class="fas fa-comment"></i>
+                        <input type="text" id="catatan" placeholder="Contoh: makan siang" value="Transfer test">
+                    </div>
+                </div>
+                <button class="transfer-btn" id="btnTransfer"><i class="fas fa-paper-plane"></i> Transfer</button>
+            </div>
+        </div>
+
+        <!-- Panel QR Payment -->
+        <div class="tab-panel" id="qr-tab">
+            <div class="qr-panel">
+                <div class="qr-container">
+                    <div id="qrcode"></div>
+                    <div class="qr-amount" id="qrAmountDisplay">Rp 100.000</div>
+                    <div class="qr-merchant">Merchant: Warung Makan Bahari</div>
+                    <div class="qr-actions">
+                        <button class="btn-outline" id="changeAmountBtn">Ubah Nominal</button>
+                        <button class="btn-primary" id="payWithQrBtn">Bayar Sekarang</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Bukti Pembayaran -->
+        <div class="tab-panel" id="receipt-tab">
+            <div class="receipt-panel" id="receiptContainer">
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="receipt-status">Pembayaran Berhasil</div>
+                        <div style="font-size: 12px; opacity: 0.9;">ID Transaksi: NUSA-20241208-001</div>
+                    </div>
+                    <div class="receipt-details">
+                        <div class="receipt-row">
+                            <span class="receipt-label">Waktu</span>
+                            <span class="receipt-value" id="receiptTime">-</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span class="receipt-label">Penerima / Merchant</span>
+                            <span class="receipt-value" id="receiptMerchant">Warung Makan Bahari</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span class="receipt-label">Jumlah</span>
+                            <span class="receipt-value large" id="receiptAmount">Rp 0</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span class="receipt-label">Metode</span>
+                            <span class="receipt-value">NUSA Pay QRIS</span>
+                        </div>
+                        <div class="receipt-row">
+                            <span class="receipt-label">Catatan</span>
+                            <span class="receipt-value" id="receiptNote">-</span>
+                        </div>
+                        <button class="download-btn" id="downloadReceiptBtn">
+                            <i class="fas fa-download"></i> Unduh Bukti PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Panel -->
+        <div class="history-list" id="historyList">
+            <div style="padding: 16px; text-align: center; color: #8f9bb3;">
+                <i class="fas fa-history"></i> Riwayat transaksi akan muncul di sini
+            </div>
+        </div>
+
+        <footer>✨ Aman & Terpercaya • QRIS Payment</footer>
+    </div>
+</div>
+
+<div id="toastMsg" class="modal-toast"></div>
+
+<script>
+    // Data state
+    let currentSaldo = 500000;
+    let transactions = [];
+    let currentQrAmount = 100000;
+
+    // DOM Elements
+    const saldoSpan = document.getElementById('saldoDisplay');
+    const toastEl = document.getElementById('toastMsg');
+    const historyList = document.getElementById('historyList');
+    const receiptContainer = document.getElementById('receiptContainer');
+
+    // Helper functions
+    function formatRupiah(angka) {
+        return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function updateSaldoUI() {
+        saldoSpan.innerText = formatRupiah(currentSaldo);
+    }
+
+    function showToast(message, isError = false) {
+        toastEl.innerHTML = isError ? `⚠️ ${message}` : `✅ ${message}`;
+        toastEl.classList.add('show');
+        setTimeout(() => {
+            toastEl.classList.remove('show');
+        }, 2000);
+    }
+
+    function addTransaction(type, name, amount, note, isQR = false) {
+        const transaction = {
+            id: Date.now(),
+            type: type, // 'transfer' or 'qr_payment'
+            name: name,
+            amount: amount,
+            note: note,
+            date: new Date(),
+            isQR: isQR
+        };
+        transactions.unshift(transaction);
+        updateHistoryUI();
+        return transaction;
+    }
+
+    function updateHistoryUI() {
+        if (transactions.length === 0) {
+            historyList.innerHTML = `<div style="padding: 32px; text-align: center; color: #8f9bb3;">
+                <i class="fas fa-history"></i><br>Belum ada transaksi
+            </div>`;
+            return;
+        }
+
+        historyList.innerHTML = transactions.map(t => `
+            <div class="history-item" onclick="viewReceipt(${t.id})">
+                <div class="history-info">
+                    <div class="history-icon">
+                        <i class="fas ${t.type === 'transfer' ? 'fa-paper-plane' : 'fa-qrcode'}"></i>
+                    </div>
+                    <div class="history-detail">
+                        <h4>${t.type === 'transfer' ? 'Transfer ke' : 'QR Payment ke'} ${t.name}</h4>
+                        <p>${new Date(t.date).toLocaleString('id-ID')}</p>
+                    </div>
+                </div>
+                <div class="history-amount negative">-Rp ${formatRupiah(t.amount)}</div>
+            </div>
+        `).join('');
+    }
+
+    // View receipt from history
+    window.viewReceipt = function(transactionId) {
+        const transaction = transactions.find(t => t.id === transactionId);
+        if (transaction) {
+            showReceipt(transaction);
+            // Switch to receipt tab
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active-panel'));
+            document.querySelector('[data-tab="receipt-tab"]').classList.add('active');
+            document.getElementById('receipt-tab').classList.add('active-panel');
+        }
+    };
+
+    function showReceipt(transaction) {
+        document.getElementById('receiptTime').innerText = new Date(transaction.date).toLocaleString('id-ID');
+        document.getElementById('receiptMerchant').innerText = transaction.name;
+        document.getElementById('receiptAmount').innerText = `Rp ${formatRupiah(transaction.amount)}`;
+        document.getElementById('receiptNote').innerText = transaction.note || '-';
+    }
+
+    // Process payment
+    function processPayment(name, amount, note, isQR = false, merchant = null) {
+        if (!name || name.trim() === "") {
+            showToast("Nama penerima tidak boleh kosong", true);
+            return false;
+        }
+        
+        if (amount < 5000) {
+            showToast("Minimal transfer Rp5.000", true);
+            return false;
+        }
+        
+        if (amount > currentSaldo) {
+            showToast("Saldo tidak mencukupi!", true);
+            return false;
+        }
+        
+        currentSaldo -= amount;
+        updateSaldoUI();
+        
+        const recipientName = merchant || name;
+        const transaction = addTransaction(isQR ? 'qr_payment' : 'transfer', recipientName, amount, note, isQR);
+        showReceipt(transaction);
+        showToast(`${isQR ? 'Pembayaran QR' : 'Transfer'} Rp ${formatRupiah(amount)} berhasil!`);
+        
+        // Switch to receipt tab automatically
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active-panel'));
+        document.querySelector('[data-tab="receipt-tab"]').classList.add('active');
+        document.getElementById('receipt-tab').classList.add('active-panel');
+        
+        return true;
+    }
+
+    // QR Code generation
+    function generateQRCode(amount) {
+        const qrContent = `NUSA-PAY://merchant/warung_makan_bahari?amount=${amount}&merchant=Warung Makan Bahari&timestamp=${Date.now()}`;
+        const qrcodeDiv = document.getElementById('qrcode');
+        qrcodeDiv.innerHTML = '';
+        new QRCode(qrcodeDiv, {
+            text: qrContent,
+            width: 180,
+            height: 180,
+            colorDark: "#0057e7",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        document.getElementById('qrAmountDisplay').innerText = `Rp ${formatRupiah(amount)}`;
+        currentQrAmount = amount;
+    }
+
+    // Event Listeners
+    document.getElementById('btnTransfer').addEventListener('click', () => {
+        const nama = document.getElementById('namaPenerima').value;
+        const nominal = parseInt(document.getElementById('nominalTransfer').value.replace(/[^0-9]/g, ''));
+        const catatan = document.getElementById('catatan').value;
+        
+        if (isNaN(nominal)) {
+            showToast("Masukkan nominal yang valid", true);
+            return;
+        }
+        
+        processPayment(nama, nominal, catatan, false);
+    });
+
+    document.getElementById('payWithQrBtn').addEventListener('click', () => {
+        processPayment("Warung Makan Bahari", currentQrAmount, "Pembayaran QRIS", true, "Warung Makan Bahari");
+    });
+
+    document.getElementById('changeAmountBtn').addEventListener('click', () => {
+        let newAmount = prompt("Masukkan nominal pembayaran (Rp)", currentQrAmount);
+        if (newAmount && !isNaN(parseInt(newAmount))) {
+            const amount = parseInt(newAmount);
+            if (amount >= 1000) {
+                generateQRCode(amount);
+                showToast(`Nominal QR diubah menjadi Rp ${formatRupiah(amount)}`);
+            } else {
+                showToast("Minimal Rp1.000", true);
+            }
+        }
+    });
+
+    document.getElementById('topupBtn').addEventListener('click', () => {
+        let topupAmount = prompt("Masukkan nominal top up (Rp)", "100000");
+        if (topupAmount && !isNaN(parseInt(topupAmount))) {
+            const amount = parseInt(topupAmount);
+            if (amount > 0) {
+                currentSaldo += amount;
+                updateSaldoUI();
+                showToast(`Top up Rp ${formatRupiah(amount)} berhasil!`);
+            }
+        }
+    });
+
+    document.getElementById('historyBtn').addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active-panel'));
+        // Show history is always visible, just scroll to it
+        document.getElementById('historyList').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    document.getElementById('downloadReceiptBtn').addEventListener('click', () => {
+        showToast("Fitur unduh bukti pembayaran (simulasi)", false);
+        // Simulate download
+        const receiptContent = document.getElementById('receiptContainer').innerHTML;
+        console.log("Download receipt:", receiptContent);
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active-panel'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active-panel');
+        });
+    });
+
+    // Quick menu navigation
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const tab = item.getAttribute('data-tab');
+            if (tab === 'transfer') {
+                document.querySelector('[data-tab="transfer-tab"]').click();
+            } else if (tab === 'qr') {
+                document.querySelector('[data-tab="qr-tab"]').click();
+            } else if (tab === 'myqr') {
+                document.querySelector('[data-tab="qr-tab"]').click();
+                generateQRCode(currentQrAmount);
+                showToast("QR Code Siap Dipindai", false);
+            } else if (tab === 'history') {
+                document.getElementById('historyList').scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Initialize QR Code
+    generateQRCode(100000);
+    updateSaldoUI();
+
+    // Sample initial transaction for demo
+    setTimeout(() => {
+        if (transactions.length === 0) {
+            const sampleTrans = {
+                id: Date.now(),
+                type: 'transfer',
+                name: 'Demo Transfer',
+                amount: 50000,
+                note: 'Contoh transaksi',
+                date: new Date(),
+                isQR: false
+            };
+            transactions.push(sampleTrans);
+            updateHistoryUI();
+        }
+    }, 500);
+</script>
+</body>
+</html>
